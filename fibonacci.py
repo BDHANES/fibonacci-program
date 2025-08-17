@@ -1,4 +1,4 @@
-# Fibonacci sequence using iteration
+
 
 def fibonacci(n):
     a, b = 0, 1
@@ -6,7 +6,7 @@ def fibonacci(n):
         print(a, end=" ")
         a, b = b, a + b
 
-# Number of terms
+
 num_terms = int(input("Enter number of terms: "))
 fibonacci(num_terms)
 
