@@ -1,1 +1,48 @@
+# image_classification.py
+import tensorflow as tf
+import tensorflow_datasets as tfds
+import matplotlib.pyplot as plt
 
+print("Loading dataset...")
+dataset, info = tfds.load("tf_flowers", with_info=True, as_supervised=True)
+train_ds = dataset["train"]
+
+print("Dataset loaded successfully!")
+print(info)
+
+IMG_SIZE = 160
+BATCH_SIZE = 32
+
+def format_example(image, label):
+    image = tf.image.resize(image, (IMG_SIZE, IMG_SIZE))
+    image = image / 255.0  # normalize
+    return image, label
+
+train = train_ds.map(format_example).batch(BATCH_SIZE).shuffle(1000)
+
+model = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, (3,3), activation="relu", input_shape=(IMG_SIZE, IMG_SIZE, 3)),
+    tf.keras.layers.MaxPooling2D(2,2),
+    tf.keras.layers.Conv2D(64, (3,3), activation="relu"),
+    tf.keras.layers.MaxPooling2D(2,2),
+    tf.keras.layers.Conv2D(128, (3,3), activation="relu"),
+    tf.keras.layers.MaxPooling2D(2,2),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(128, activation="relu"),
+    tf.keras.layers.Dense(5, activation="softmax") 
+])
+
+model.compile(optimizer="adam",
+              loss="sparse_categorical_crossentropy",
+              metrics=["accuracy"])
+
+print("Training model...")
+history = model.fit(train, epochs=5)
+
+plt.plot(history.history["accuracy"], label="accuracy")
+plt.plot(history.history["loss"], label="loss")
+plt.legend()
+plt.show()
+
+model.save("flower_classification_model.h5")
+print("Model saved as flower_classification_model.h5")
