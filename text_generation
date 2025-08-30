@@ -1,0 +1,49 @@
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, LSTM, Embedding
+from tensorflow.keras.utils import to_categorical
+
+with open("data.txt", "r", encoding="utf-8") as f:
+    text = f.read()
+
+chars = sorted(list(set(text)))
+char_to_int = {c: i for i, c in enumerate(chars)}
+int_to_char = {i: c for i, c in enumerate(chars)}
+
+seq_length = 40  # length of input sequence
+X_data, y_data = [], []
+
+for i in range(0, len(text) - seq_length, 1):
+    seq_in = text[i:i + seq_length]
+    seq_out = text[i + seq_length]
+    X_data.append([char_to_int[ch] for ch in seq_in])
+    y_data.append(char_to_int[seq_out])
+
+X = np.reshape(X_data, (len(X_data), seq_length))
+y = to_categorical(y_data, num_classes=len(chars))
+
+model = Sequential()
+model.add(Embedding(len(chars), 50, input_length=seq_length))
+model.add(LSTM(128, return_sequences=True))
+model.add(LSTM(128))
+model.add(Dense(len(chars), activation="softmax"))
+
+model.compile(loss="categorical_crossentropy", optimizer="adam")
+
+print("Training model...")
+model.fit(X, y, epochs=20, batch_size=128)
+
+def generate_text(seed_text, length=200):
+    result = seed_text
+    for _ in range(length):
+        x = np.array([[char_to_int[ch] for ch in seed_text[-seq_length:]]])
+        prediction = model.predict(x, verbose=0)
+        index = np.argmax(prediction)
+        next_char = int_to_char[index]
+        result += next_char
+        seed_text += next_char
+    return result
+
+print("\nGenerated Text:")
+print(generate_text("the quick brown fox jumps over "))
